@@ -8,8 +8,9 @@ from app.config import get_settings
 from app.db import get_db
 from app.dependencies import verified_user_id
 from app.models import Product, User, UserInteraction
-from app.schemas import InteractionCreate, InteractionResponse, ProductCreate, ProductResponse, ProductUpdate, UserCreate, UserResponse
+from app.schemas import InteractionCreate, InteractionResponse, ProductCreate, ProductResponse, ProductUpdate, SimilarProductResponse, UserCreate, UserResponse
 from app.services.product_embeddings import generate_product_embedding
+from app.services.similarity import find_similar_products
 
 logging.basicConfig(level=get_settings().log_level)
 app = FastAPI(title="Fashion Recommendation Service", version="0.1.0", description="Phase 1 catalog and activity API")
@@ -61,6 +62,13 @@ def get_product(product_id: str, db: Session = Depends(get_db)):
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     return product
+
+
+@app.get("/products/{product_id}/similar", response_model=list[SimilarProductResponse])
+def similar_products(product_id: str, limit: int = Query(10, ge=1, le=50), db: Session = Depends(get_db)):
+    if not db.get(Product, product_id):
+        raise HTTPException(status_code=404, detail="Product not found")
+    return [{"product": result.product, "score": result.score} for result in find_similar_products(db, product_id, limit)]
 
 
 @app.patch("/products/{product_id}", response_model=ProductResponse)

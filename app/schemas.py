@@ -42,6 +42,11 @@ class ProductUpdate(BaseModel):
     available: bool | None = None
 
 
+class SimilarProductResponse(BaseModel):
+    product: ProductResponse
+    score: float = Field(ge=0, le=1)
+
+
 class InteractionCreate(BaseModel):
     event_id: str = Field(min_length=1, max_length=128)
     user_id: str = Field(min_length=1, max_length=128)
